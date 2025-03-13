@@ -8,6 +8,7 @@ import { useNewsData } from '@/hooks/useNewsData';
 import { FilterOptions, EventType } from '@/lib/types';
 import { Suspense } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Sparkles, Globe as GlobeIcon } from 'lucide-react';
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -75,18 +76,43 @@ const Index = () => {
   
   return (
     <div className="min-h-screen w-full flex flex-col bg-background text-foreground overflow-hidden relative">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-radial from-background to-black -z-10"></div>
+      {/* Background with deep space effect */}
+      <div className="absolute inset-0 bg-gradient-radial from-[#0f172a] to-background -z-10">
+        <div className="absolute inset-0 opacity-30 bg-[url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071')] bg-cover bg-center mix-blend-soft-light"></div>
+      </div>
+      
+      {/* Animated background particles */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-5">
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div 
+            key={i}
+            className="absolute rounded-full bg-primary/5 animate-pulse-glow"
+            style={{
+              width: `${Math.random() * 4 + 1}px`,
+              height: `${Math.random() * 4 + 1}px`,
+              top: `${Math.random() * 100}%`,
+              left: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${Math.random() * 10 + 5}s`
+            }}
+          />
+        ))}
+      </div>
       
       {/* Header */}
-      <header className="glass-dark border-b border-white/5 py-3 px-6 animate-fade-in">
+      <header className="neo-glass border-b border-white/5 py-3 px-6 animate-fade-in z-10">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center">
             <div className="w-8 h-8 relative">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary to-primary/40 opacity-80 blur-[2px]"></div>
-              <div className="absolute inset-0.5 rounded-full bg-gradient-to-tr from-primary to-primary/40"></div>
+              <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-primary/90 to-primary/20 opacity-90 blur-[2px] animate-pulse-glow"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <GlobeIcon size={20} className="text-primary" />
+              </div>
             </div>
-            <h1 className="ml-3 text-xl font-medium tracking-tight">GlobalAlert</h1>
+            <h1 className="ml-3 text-xl font-medium tracking-tight text-shadow flex items-center">
+              GlobalAlert
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary/80">LIVE</span>
+            </h1>
           </div>
           
           <div className="flex items-center space-x-3">
@@ -101,14 +127,28 @@ const Index = () => {
       {/* Main content */}
       <main className="flex-1 flex flex-col md:flex-row max-w-7xl w-full mx-auto p-6 gap-6">
         {/* Earth view */}
-        <div className="w-full md:w-2/3 h-[500px] md:h-[700px] glass-dark rounded-lg border border-white/5 overflow-hidden shadow-xl animate-fade-in" style={{animationDelay: '100ms'}}>
-          <Suspense fallback={<div className="w-full h-full flex items-center justify-center">Loading...</div>}>
+        <div className="w-full md:w-2/3 h-[500px] md:h-[700px] neo-glass rounded-lg border border-white/5 overflow-hidden shadow-xl animate-fade-in relative" style={{animationDelay: '100ms'}}>
+          <Suspense fallback={
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="flex flex-col items-center animate-float">
+                <div className="w-16 h-16 border-4 border-primary/50 border-t-transparent rounded-full animate-spin"></div>
+                <p className="mt-4 text-muted-foreground text-sm">Loading Earth...</p>
+              </div>
+            </div>
+          }>
             <Globe 
               events={events} 
               selectedEvent={selectedEvent} 
               onSelectEvent={setSelectedEvent} 
             />
           </Suspense>
+          
+          {/* Globe overlay effects */}
+          <div className="absolute inset-0 pointer-events-none rounded-lg bg-gradient-to-t from-background/30 to-transparent opacity-60"></div>
+          <div className="absolute bottom-4 left-4 glass-dark px-3 py-1.5 rounded-full text-xs text-muted-foreground">
+            <span className="inline-block w-2 h-2 rounded-full bg-primary/50 mr-2 animate-pulse"></span>
+            Live Tracking
+          </div>
         </div>
         
         {/* News panel */}
@@ -135,10 +175,13 @@ const Index = () => {
       </main>
       
       {/* Footer */}
-      <footer className="glass-dark border-t border-white/5 py-3 px-6 text-xs text-muted-foreground animate-fade-in" style={{animationDelay: '300ms'}}>
+      <footer className="neo-glass border-t border-white/5 py-3 px-6 text-xs text-muted-foreground animate-fade-in z-10" style={{animationDelay: '300ms'}}>
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>© {new Date().getFullYear()} GlobalAlert</div>
-          <div>Real-time global incident tracking</div>
+          <div className="flex items-center">
+            <span className="mr-2">Real-time global incident tracking</span>
+            <Sparkles size={12} className="text-primary/50" />
+          </div>
         </div>
       </footer>
     </div>

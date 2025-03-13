@@ -2,8 +2,8 @@
 import React, { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipBack, Clock } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { Play, Pause, SkipBack, Clock, Calendar } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
 
 interface TimelineControlProps {
   isPlaying: boolean;
@@ -23,22 +23,23 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
   currentTime
 }) => {
   return (
-    <div className="glass w-full rounded-lg p-3 border border-white/10">
+    <div className="neo-glass w-full rounded-lg p-4 border border-white/10">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-2">
           <Clock size={14} className="text-primary" />
-          <span className="text-xs font-medium">Timeline</span>
+          <span className="text-xs font-medium">Timeline Explorer</span>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {formatDistanceToNow(currentTime, { addSuffix: true })}
+        <div className="flex items-center space-x-2 text-xs">
+          <Calendar size={12} className="text-primary/70" />
+          <span className="text-muted-foreground">{format(currentTime, 'MMM d, yyyy')}</span>
         </div>
       </div>
 
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 mb-3">
         <Button
           variant="outline"
           size="icon"
-          className="h-7 w-7 glass hover:bg-white/10"
+          className="h-8 w-8 glass hover:bg-white/10"
           onClick={onReset}
         >
           <SkipBack size={14} />
@@ -47,7 +48,7 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
         <Button
           variant={isPlaying ? "secondary" : "outline"}
           size="icon"
-          className="h-7 w-7 glass hover:bg-white/10"
+          className={`h-8 w-8 ${isPlaying ? 'bg-primary/20 border-primary/30' : 'glass hover:bg-white/10'}`}
           onClick={onPlayToggle}
         >
           {isPlaying ? <Pause size={14} /> : <Play size={14} />}
@@ -62,6 +63,14 @@ const TimelineControl: React.FC<TimelineControlProps> = ({
             onValueChange={(values) => onProgressChange(values[0])}
           />
         </div>
+      </div>
+      
+      <div className="flex justify-between text-[10px] text-muted-foreground px-2">
+        <span>Past</span>
+        <span>
+          {formatDistanceToNow(currentTime, { addSuffix: true })}
+        </span>
+        <span>Now</span>
       </div>
     </div>
   );
