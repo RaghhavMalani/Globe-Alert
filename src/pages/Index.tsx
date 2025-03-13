@@ -8,7 +8,13 @@ import { useNewsData } from '@/hooks/useNewsData';
 import { FilterOptions, EventType } from '@/lib/types';
 import { Suspense } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sparkles, Globe as GlobeIcon } from 'lucide-react';
+import { Sparkles, Globe as GlobeIcon, Info, HelpCircle } from 'lucide-react';
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
 
 const Index = () => {
   const isMobile = useIsMobile();
@@ -73,6 +79,16 @@ const Index = () => {
     
     setCurrentTime(targetTime);
   }, [timeProgress, filterOptions.timeRange]);
+
+  // Legend items for event types
+  const legendItems = [
+    { type: 'war', label: 'War/Conflict' },
+    { type: 'terrorism', label: 'Terrorism' },
+    { type: 'natural', label: 'Natural Disaster' },
+    { type: 'civil', label: 'Civil Unrest' },
+    { type: 'political', label: 'Political Crisis' },
+    { type: 'other', label: 'Other Incidents' }
+  ];
   
   return (
     <div className="min-h-screen w-full flex flex-col bg-background text-foreground overflow-hidden relative">
@@ -116,6 +132,28 @@ const Index = () => {
           </div>
           
           <div className="flex items-center space-x-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="icon" className="w-8 h-8 glass-dark">
+                    <HelpCircle size={14} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="neo-glass border-white/10 max-w-sm">
+                  <div className="text-xs">
+                    <p className="font-medium mb-1">How to use:</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      <li>Drag to rotate the globe</li>
+                      <li>Scroll to zoom in/out</li>
+                      <li>Click markers to view incident details</li>
+                      <li>Use timeline controls to explore past events</li>
+                      <li>Filter incidents by type and severity</li>
+                    </ul>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
             <FilterControl 
               filterOptions={filterOptions}
               onFilterChange={setFilterOptions}
@@ -143,11 +181,17 @@ const Index = () => {
             />
           </Suspense>
           
-          {/* Globe overlay effects */}
-          <div className="absolute inset-0 pointer-events-none rounded-lg bg-gradient-to-t from-background/30 to-transparent opacity-60"></div>
-          <div className="absolute bottom-4 left-4 glass-dark px-3 py-1.5 rounded-full text-xs text-muted-foreground">
-            <span className="inline-block w-2 h-2 rounded-full bg-primary/50 mr-2 animate-pulse"></span>
-            Live Tracking
+          {/* Legend */}
+          <div className="absolute top-4 left-4 glass-dark rounded-lg p-2 text-xs">
+            <div className="mb-1 font-medium text-white/90">Event Types</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+              {legendItems.map(item => (
+                <div key={item.type} className="flex items-center space-x-1.5">
+                  <div className={`w-2 h-2 rounded-full event-${item.type}`}></div>
+                  <span className="text-muted-foreground">{item.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         

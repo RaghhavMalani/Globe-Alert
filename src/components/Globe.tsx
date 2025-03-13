@@ -1,12 +1,14 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Text } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { NewsEvent } from '@/lib/types';
 
 interface GlobeMarkerProps {
-  position: [number, number, number];
+  lat: number;
+  lng: number;
+  radius: number;
   selected: boolean;
   type: string;
   severity: number;
@@ -14,12 +16,22 @@ interface GlobeMarkerProps {
 }
 
 const GlobeMarker: React.FC<GlobeMarkerProps> = ({ 
-  position, 
+  lat, 
+  lng, 
+  radius,
   selected, 
   type, 
   severity, 
   onClick 
 }) => {
+  // Convert latitude and longitude to 3D position
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lng + 180) * (Math.PI / 180);
+  
+  const x = -(radius * Math.sin(phi) * Math.cos(theta));
+  const z = radius * Math.sin(phi) * Math.sin(theta);
+  const y = radius * Math.cos(phi);
+
   // Define color based on event type
   const getColor = () => {
     switch(type) {
@@ -53,7 +65,7 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   });
 
   return (
-    <group position={position} onClick={onClick}>
+    <group position={[x, y, z]} onClick={onClick}>
       {/* Main dot */}
       <mesh>
         <sphereGeometry args={[size, 16, 16]} />
@@ -81,6 +93,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   const earthRef = useRef<THREE.Mesh>(null);
   const cloudsRef = useRef<THREE.Mesh>(null);
   const atmosphereRef = useRef<THREE.Mesh>(null);
+  const markersGroupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   
   // Load textures
@@ -96,22 +109,16 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   const autoRotateRef = useRef(autoRotate);
   autoRotateRef.current = autoRotate;
 
-  // Convert lat/lng to 3D position
-  const latLngToPosition = (lat: number, lng: number, radius: number): [number, number, number] => {
-    const phi = (90 - lat) * (Math.PI / 180);
-    const theta = (lng + 180) * (Math.PI / 180);
-    
-    const x = -(radius * Math.sin(phi) * Math.cos(theta));
-    const z = radius * Math.sin(phi) * Math.sin(theta);
-    const y = radius * Math.cos(phi);
-    
-    return [x, y, z];
-  };
-
   // Rotate earth and clouds
   useFrame(({ clock }) => {
     if (earthRef.current && autoRotateRef.current) {
-      earthRef.current.rotation.y = clock.getElapsedTime() * 0.05;
+      const rotationSpeed = 0.05;
+      earthRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
+      
+      // Ensure markers rotate with earth
+      if (markersGroupRef.current) {
+        markersGroupRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
+      }
     }
     
     if (cloudsRef.current) {
@@ -127,25 +134,30 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   useEffect(() => {
     if (selectedEvent) {
       const { lat, lng } = selectedEvent.location;
-      const targetPosition = latLngToPosition(lat, lng, 2.5);
       
-      // Create a dummy object at the marker position
-      const dummy = new THREE.Object3D();
-      dummy.position.set(targetPosition[0], targetPosition[1], targetPosition[2]);
+      // Calculate the target position on the sphere
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lng + 180) * (Math.PI / 180);
       
-      // Get direction from camera to marker
-      const direction = new THREE.Vector3();
-      direction.subVectors(dummy.position, camera.position).normalize();
+      const radius = 2;
+      const x = -(radius * Math.sin(phi) * Math.cos(theta));
+      const z = radius * Math.sin(phi) * Math.sin(theta);
+      const y = radius * Math.cos(phi);
       
-      // Position camera based on direction
-      const newPosition = new THREE.Vector3();
-      newPosition.copy(dummy.position).addScaledVector(direction, -2.5);
+      const targetPosition = new THREE.Vector3(x, y, z);
+      
+      // Get direction from origin to target position
+      const direction = targetPosition.clone().normalize();
+      
+      // Position camera at a distance along this direction
+      const cameraDistance = 4;
+      const newCameraPosition = direction.multiplyScalar(cameraDistance);
       
       // Animate camera to new position
       const startPosition = camera.position.clone();
       const animateCamera = (progress: number) => {
-        camera.position.lerpVectors(startPosition, newPosition, progress);
-        camera.lookAt(dummy.position);
+        camera.position.lerpVectors(startPosition, newCameraPosition, progress);
+        camera.lookAt(0, 0, 0);
       };
       
       let start: number | null = null;
@@ -188,6 +200,22 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
           specular={new THREE.Color(0x333333)}
           shininess={15}
         />
+        
+        {/* Markers group tied to Earth rotation */}
+        <group ref={markersGroupRef}>
+          {events.map(event => (
+            <GlobeMarker 
+              key={event.id}
+              lat={event.location.lat}
+              lng={event.location.lng}
+              radius={2.02}
+              selected={selectedEvent?.id === event.id}
+              type={event.type}
+              severity={event.severity}
+              onClick={() => onSelectEvent(event.id === selectedEvent?.id ? null : event)}
+            />
+          ))}
+        </group>
       </mesh>
       
       {/* Cloud layer */}
@@ -211,26 +239,6 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
           side={THREE.BackSide}
         />
       </mesh>
-      
-      {/* Event markers */}
-      {events.map(event => {
-        const position = latLngToPosition(
-          event.location.lat, 
-          event.location.lng, 
-          2.02
-        );
-        
-        return (
-          <GlobeMarker 
-            key={event.id}
-            position={position}
-            selected={selectedEvent?.id === event.id}
-            type={event.type}
-            severity={event.severity}
-            onClick={() => onSelectEvent(event.id === selectedEvent?.id ? null : event)}
-          />
-        );
-      })}
     </>
   );
 };
@@ -248,6 +256,9 @@ const Globe: React.FC<GlobeProps> = (props) => {
         
         <ambientLight intensity={0.1} />
         <directionalLight position={[5, 3, 5]} intensity={1.5} />
+        
+        {/* Add stars for a more immersive space background */}
+        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         
         <Earth {...props} />
         
@@ -269,6 +280,12 @@ const Globe: React.FC<GlobeProps> = (props) => {
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
           <p className="text-muted-foreground text-sm">Loading Earth Model...</p>
         </div>
+      </div>
+      
+      {/* Globe info overlay */}
+      <div className="absolute bottom-4 right-4 neo-glass px-4 py-2 rounded-lg text-xs text-muted-foreground flex items-center">
+        <div className="mr-2 w-3 h-3 rounded-full bg-primary/70 animate-pulse"></div>
+        <span>Drag to rotate | Scroll to zoom</span>
       </div>
     </div>
   );
