@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
@@ -73,7 +72,8 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
     if (glowRef.current) {
       // Always have a subtle glow, but make it stronger when selected or hovered
       const glowStrength = selected || hovered ? 0.5 : 0.3;
-      glowRef.current.material.opacity = glowStrength + Math.sin(clock.getElapsedTime() * 2) * 0.1;
+      const material = glowRef.current.material as THREE.MeshBasicMaterial;
+      material.opacity = glowStrength + Math.sin(clock.getElapsedTime() * 2) * 0.1;
     }
   });
 
