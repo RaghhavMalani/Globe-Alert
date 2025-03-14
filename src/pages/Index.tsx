@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import Globe from '@/components/Globe';
 import NewsPanel from '@/components/NewsPanel';
@@ -9,6 +8,7 @@ import { FilterOptions, EventType } from '@/lib/types';
 import { Suspense } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sparkles, Globe as GlobeIcon, Info, HelpCircle } from 'lucide-react';
+import { Button } from "@/components/ui/button";
 import { 
   Tooltip,
   TooltipContent,
