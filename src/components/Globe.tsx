@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
@@ -33,7 +32,7 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   const x = -(radius * Math.sin(phi) * Math.cos(theta));
   const z = radius * Math.sin(phi) * Math.sin(theta);
   const y = radius * Math.cos(phi);
-
+  
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
 
@@ -134,10 +133,15 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'
   ]);
 
-  // Auto-rotation unless controls are being used
+  // Auto-rotation settings
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(autoRotate);
   autoRotateRef.current = autoRotate;
+
+  // State to track if we're currently zooming to a location
+  const [isZoomingToLocation, setIsZoomingToLocation] = useState(false);
+  // Store previous selected event to detect re-clicks
+  const prevSelectedEventRef = useRef<string | null>(null);
 
   // Rotate earth and clouds
   useFrame(({ clock }) => {
@@ -153,14 +157,59 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     if (atmosphereRef.current) {
       atmosphereRef.current.rotation.y = clock.getElapsedTime() * 0.03;
     }
+    
+    // Sync the markers rotation with earth when auto-rotating
+    if (markersGroupRef.current && earthRef.current && autoRotateRef.current) {
+      markersGroupRef.current.rotation.y = earthRef.current.rotation.y;
+    }
   });
 
-  // If there's a selected event, move camera to focus on it
+  // Handle event selection and camera movement
   useEffect(() => {
-    if (selectedEvent) {
-      const { lat, lng } = selectedEvent.location;
+    // If clicked on the same event again, zoom out and resume rotation
+    if (selectedEvent && prevSelectedEventRef.current === selectedEvent.id) {
+      prevSelectedEventRef.current = null;
+      setIsZoomingToLocation(true);
       
-      // Calculate the target position on the sphere
+      // Reset camera position
+      const resetDuration = 800;
+      const startPosition = camera.position.clone();
+      const endPosition = new THREE.Vector3(0, 0, 5);
+      
+      let start: number | null = null;
+      
+      const resetCamera = (timestamp: number) => {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / resetDuration, 1);
+        
+        camera.position.lerpVectors(startPosition, endPosition, progress);
+        camera.lookAt(0, 0, 0);
+        
+        if (progress < 1) {
+          requestAnimationFrame(resetCamera);
+        } else {
+          setIsZoomingToLocation(false);
+          // Resume auto-rotation
+          setAutoRotate(true);
+        }
+      };
+      
+      requestAnimationFrame(resetCamera);
+      
+      // Reset orbit controls
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
+      }
+      
+    } else if (selectedEvent) {
+      // We've clicked on a new event or first time on this event
+      prevSelectedEventRef.current = selectedEvent.id;
+      setIsZoomingToLocation(true);
+      
+      // Calculate target position on the globe
+      const { lat, lng } = selectedEvent.location;
       const phi = (90 - lat) * (Math.PI / 180);
       const theta = (lng + 180) * (Math.PI / 180);
       
@@ -170,51 +219,54 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
       const y = radius * Math.cos(phi);
       
       const targetPosition = new THREE.Vector3(x, y, z);
-      
-      // Get direction from origin to target position
       const direction = targetPosition.clone().normalize();
-      
-      // Position camera at a distance along this direction
-      const cameraDistance = 3.5; // Closer zoom
+      const cameraDistance = 3.5;
       const newCameraPosition = direction.multiplyScalar(cameraDistance);
       
-      // Animate camera to new position
+      // Animate camera to the new position
       const startPosition = camera.position.clone();
-      const animateCamera = (progress: number) => {
-        camera.position.lerpVectors(startPosition, newCameraPosition, progress);
-        camera.lookAt(0, 0, 0);
-      };
-      
+      const duration = 800;
       let start: number | null = null;
-      const duration = 800; // 0.8 second for faster animation
       
-      const step = (timestamp: number) => {
+      const animateCamera = (timestamp: number) => {
         if (!start) start = timestamp;
         const elapsed = timestamp - start;
         const progress = Math.min(elapsed / duration, 1);
         
-        animateCamera(progress);
+        camera.position.lerpVectors(startPosition, newCameraPosition, progress);
+        camera.lookAt(0, 0, 0);
         
         if (progress < 1) {
-          requestAnimationFrame(step);
+          requestAnimationFrame(animateCamera);
+        } else {
+          setIsZoomingToLocation(false);
         }
       };
       
-      requestAnimationFrame(step);
+      requestAnimationFrame(animateCamera);
       
       // Stop auto-rotation when focusing on an event
       setAutoRotate(false);
       
-      // Also update OrbitControls target to center on the point
+      // Update OrbitControls target
       if (controlsRef.current) {
         controlsRef.current.target.set(0, 0, 0);
         controlsRef.current.update();
       }
     } else {
-      // Re-enable auto-rotation when no event is selected
+      // No event selected anymore, resume rotation
+      prevSelectedEventRef.current = null;
       setAutoRotate(true);
     }
   }, [selectedEvent, camera]);
+
+  // Handle user interaction with controls
+  const handleControlsChange = () => {
+    // Only stop auto-rotation if user is actively controlling and we're not zooming to location
+    if (!isZoomingToLocation && autoRotate) {
+      setAutoRotate(false);
+    }
+  };
 
   return (
     <>
@@ -231,8 +283,8 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         />
       </mesh>
       
-      {/* Markers group - part of the Earth object for correct rotation */}
-      <group ref={markersGroupRef} rotation={earthRef.current ? earthRef.current.rotation : [0, 0, 0]}>
+      {/* Markers group - rotation synced with Earth in useFrame */}
+      <group ref={markersGroupRef}>
         {events.map(event => (
           <GlobeMarker 
             key={event.id}
@@ -281,10 +333,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         autoRotateSpeed={0.5}
         enableDamping={true}
         dampingFactor={0.05}
-        onChange={() => {
-          // Disable auto-rotation when user interacts with controls
-          if (autoRotate) setAutoRotate(false);
-        }}
+        onChange={handleControlsChange}
       />
     </>
   );
@@ -321,7 +370,7 @@ const Globe: React.FC<GlobeProps> = (props) => {
       {/* Globe info overlay */}
       <div className="absolute bottom-4 right-4 neo-glass px-4 py-2 rounded-lg text-xs text-muted-foreground flex items-center">
         <div className="mr-2 w-3 h-3 rounded-full bg-primary/70 animate-pulse"></div>
-        <span>Click markers to zoom | Hover for details</span>
+        <span>Click markers to zoom | Click again to zoom out</span>
       </div>
     </div>
   );
