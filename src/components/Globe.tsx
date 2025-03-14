@@ -156,7 +156,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'
   ]);
 
-  // Auto-rotation is enabled by default
+  // Default autoRotate to true - ensure it's initialized to true
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(autoRotate);
   autoRotateRef.current = autoRotate;
@@ -166,19 +166,26 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   // Store previous selected event to detect re-clicks
   const prevSelectedEventRef = useRef<string | null>(null);
 
-  // Rotate earth and clouds
+  // Update controls when autoRotate changes
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.autoRotate = autoRotate;
+    }
+  }, [autoRotate]);
+
+  // Manually rotate earth and clouds
   useFrame(({ clock }) => {
     if (earthRef.current && autoRotateRef.current) {
       const rotationSpeed = 0.05;
-      earthRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
+      earthRef.current.rotation.y += rotationSpeed * 0.01;
     }
     
     if (cloudsRef.current) {
-      cloudsRef.current.rotation.y = clock.getElapsedTime() * 0.07;
+      cloudsRef.current.rotation.y += 0.07 * 0.01;
     }
 
     if (atmosphereRef.current) {
-      atmosphereRef.current.rotation.y = clock.getElapsedTime() * 0.03;
+      atmosphereRef.current.rotation.y += 0.03 * 0.01;
     }
     
     // Sync the markers rotation with earth when auto-rotating
@@ -279,14 +286,6 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     }
   }, [selectedEvent, camera]);
 
-  // Handle user interaction with controls
-  const handleControlsChange = () => {
-    // Only stop auto-rotation if user is actively controlling and we're not zooming to location
-    if (!isZoomingToLocation && autoRotate) {
-      setAutoRotate(false);
-    }
-  };
-
   return (
     <>
       {/* Earth mesh */}
@@ -352,7 +351,12 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         autoRotateSpeed={0.5}
         enableDamping={true}
         dampingFactor={0.05}
-        onChange={handleControlsChange}
+        onChange={() => {
+          // Only stop auto-rotation if user is actively controlling and we're not zooming to location
+          if (!isZoomingToLocation && autoRotate) {
+            setAutoRotate(false);
+          }
+        }}
       />
     </>
   );
