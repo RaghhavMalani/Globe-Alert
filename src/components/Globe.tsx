@@ -12,6 +12,7 @@ interface GlobeMarkerProps {
   selected: boolean;
   type: string;
   severity: number;
+  title: string;
   onClick: () => void;
 }
 
@@ -22,6 +23,7 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   selected, 
   type, 
   severity, 
+  title,
   onClick 
 }) => {
   // Convert latitude and longitude to 3D position
@@ -31,6 +33,9 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   const x = -(radius * Math.sin(phi) * Math.cos(theta));
   const z = radius * Math.sin(phi) * Math.sin(theta);
   const y = radius * Math.cos(phi);
+
+  const [hovered, setHovered] = useState(false);
+  const { camera } = useThree();
 
   // Define color based on event type
   const getColor = () => {
@@ -59,25 +64,49 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   const pulseRef = useRef<THREE.Mesh>(null);
   
   useFrame(({ clock }) => {
-    if (pulseRef.current && selected) {
+    if (pulseRef.current && (selected || hovered)) {
       pulseRef.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 4) * 0.1);
     }
   });
 
+  // Calculate if the marker is facing the camera (visible)
+  const isFacingCamera = () => {
+    const markerPos = new THREE.Vector3(x, y, z).normalize();
+    const cameraDir = new THREE.Vector3(0, 0, 0).sub(camera.position).normalize();
+    const dot = markerPos.dot(cameraDir);
+    return dot < 0; // If dot product is negative, marker is facing camera
+  };
+
   return (
-    <group position={[x, y, z]} onClick={onClick}>
+    <group position={[x, y, z]} onClick={onClick} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
       {/* Main dot */}
       <mesh>
         <sphereGeometry args={[size, 16, 16]} />
         <meshBasicMaterial color={color} />
       </mesh>
       
-      {/* Glow/pulse effect for selected marker */}
-      {selected && (
+      {/* Glow/pulse effect for selected or hovered marker */}
+      {(selected || hovered) && (
         <mesh ref={pulseRef}>
           <sphereGeometry args={[size * 1.5, 16, 16]} />
           <meshBasicMaterial color={color} transparent opacity={0.3} />
         </mesh>
+      )}
+
+      {/* Tooltip on hover */}
+      {hovered && isFacingCamera() && (
+        <Text
+          position={[0, size * 2, 0]}
+          fontSize={0.1}
+          color="white"
+          anchorX="center"
+          anchorY="bottom"
+          outlineWidth={0.01}
+          outlineColor="#000000"
+          maxWidth={1}
+        >
+          {title}
+        </Text>
       )}
     </group>
   );
@@ -95,6 +124,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   const atmosphereRef = useRef<THREE.Mesh>(null);
   const markersGroupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
   
   // Load textures
   const [earthMap, earthBumpMap, earthSpecularMap, cloudsMap] = useLoader(THREE.TextureLoader, [
@@ -114,11 +144,6 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     if (earthRef.current && autoRotateRef.current) {
       const rotationSpeed = 0.05;
       earthRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
-      
-      // Ensure markers rotate with earth
-      if (markersGroupRef.current) {
-        markersGroupRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed;
-      }
     }
     
     if (cloudsRef.current) {
@@ -150,7 +175,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
       const direction = targetPosition.clone().normalize();
       
       // Position camera at a distance along this direction
-      const cameraDistance = 4;
+      const cameraDistance = 3.5; // Closer zoom
       const newCameraPosition = direction.multiplyScalar(cameraDistance);
       
       // Animate camera to new position
@@ -161,7 +186,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
       };
       
       let start: number | null = null;
-      const duration = 1000; // 1 second
+      const duration = 800; // 0.8 second for faster animation
       
       const step = (timestamp: number) => {
         if (!start) start = timestamp;
@@ -177,13 +202,17 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
       
       requestAnimationFrame(step);
       
-      // Temporarily disable auto-rotation
+      // Stop auto-rotation when focusing on an event
       setAutoRotate(false);
       
-      // Re-enable after animation
-      setTimeout(() => {
-        setAutoRotate(true);
-      }, 1500);
+      // Also update OrbitControls target to center on the point
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
+      }
+    } else {
+      // Re-enable auto-rotation when no event is selected
+      setAutoRotate(true);
     }
   }, [selectedEvent, camera]);
 
@@ -200,23 +229,24 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
           specular={new THREE.Color(0x333333)}
           shininess={15}
         />
-        
-        {/* Markers group tied to Earth rotation */}
-        <group ref={markersGroupRef}>
-          {events.map(event => (
-            <GlobeMarker 
-              key={event.id}
-              lat={event.location.lat}
-              lng={event.location.lng}
-              radius={2.02}
-              selected={selectedEvent?.id === event.id}
-              type={event.type}
-              severity={event.severity}
-              onClick={() => onSelectEvent(event.id === selectedEvent?.id ? null : event)}
-            />
-          ))}
-        </group>
       </mesh>
+      
+      {/* Markers group - part of the Earth object for correct rotation */}
+      <group ref={markersGroupRef} rotation={earthRef.current ? earthRef.current.rotation : [0, 0, 0]}>
+        {events.map(event => (
+          <GlobeMarker 
+            key={event.id}
+            lat={event.location.lat}
+            lng={event.location.lng}
+            radius={2.02}
+            selected={selectedEvent?.id === event.id}
+            type={event.type}
+            severity={event.severity}
+            title={event.title}
+            onClick={() => onSelectEvent(event.id === selectedEvent?.id ? null : event)}
+          />
+        ))}
+      </group>
       
       {/* Cloud layer */}
       <mesh ref={cloudsRef} scale={1.003}>
@@ -239,6 +269,23 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
           side={THREE.BackSide}
         />
       </mesh>
+
+      {/* Orbit controls with ref for programmatic control */}
+      <OrbitControls 
+        ref={controlsRef}
+        enablePan={false}
+        enableZoom={true}
+        minDistance={2.5}
+        maxDistance={7}
+        autoRotate={autoRotate}
+        autoRotateSpeed={0.5}
+        enableDamping={true}
+        dampingFactor={0.05}
+        onChange={() => {
+          // Disable auto-rotation when user interacts with controls
+          if (autoRotate) setAutoRotate(false);
+        }}
+      />
     </>
   );
 };
@@ -261,17 +308,6 @@ const Globe: React.FC<GlobeProps> = (props) => {
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         
         <Earth {...props} />
-        
-        <OrbitControls 
-          enablePan={false}
-          enableZoom={true}
-          minDistance={2.5}
-          maxDistance={7}
-          autoRotate={false}
-          autoRotateSpeed={0.5}
-          enableDamping={true}
-          dampingFactor={0.05}
-        />
       </Canvas>
 
       {/* Loading screen that fades out */}
@@ -285,7 +321,7 @@ const Globe: React.FC<GlobeProps> = (props) => {
       {/* Globe info overlay */}
       <div className="absolute bottom-4 right-4 neo-glass px-4 py-2 rounded-lg text-xs text-muted-foreground flex items-center">
         <div className="mr-2 w-3 h-3 rounded-full bg-primary/70 animate-pulse"></div>
-        <span>Drag to rotate | Scroll to zoom</span>
+        <span>Click markers to zoom | Hover for details</span>
       </div>
     </div>
   );
