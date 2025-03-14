@@ -1,8 +1,10 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { NewsEvent } from '@/lib/types';
+import { AlertTriangle, CircleX, Flame, Zap, CloudLightning, Flag } from 'lucide-react';
 
 interface GlobeMarkerProps {
   lat: number;
@@ -36,35 +38,42 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   const [hovered, setHovered] = useState(false);
   const { camera } = useThree();
 
-  // Define color based on event type
+  // Define color based on event type with improved colors
   const getColor = () => {
     switch(type) {
-      case 'war': return new THREE.Color(0xff4444);
-      case 'terrorism': return new THREE.Color(0xff8844);
-      case 'natural': return new THREE.Color(0x44dd88);
-      case 'civil': return new THREE.Color(0xffdd44);
-      case 'political': return new THREE.Color(0xaa44ff);
-      default: return new THREE.Color(0x4488ff);
+      case 'war': return new THREE.Color(0xff4444);         // Brighter red
+      case 'terrorism': return new THREE.Color(0xF97316);   // Bright orange
+      case 'natural': return new THREE.Color(0x44dd88);     // Vibrant green
+      case 'civil': return new THREE.Color(0xD946EF);       // Magenta pink
+      case 'political': return new THREE.Color(0x9b87f5);   // Primary purple
+      default: return new THREE.Color(0x0EA5E9);            // Ocean blue
     }
   };
 
-  // Define size based on severity
+  // Define size based on severity with larger values
   const getSize = () => {
     switch(severity) {
-      case 3: return 0.05;
-      case 2: return 0.04;
-      case 1: return 0.03;
-      default: return 0.03;
+      case 3: return 0.07;  // Increased size for high severity
+      case 2: return 0.05;  // Increased size for medium severity
+      case 1: return 0.04;  // Increased size for low severity
+      default: return 0.04;
     }
   };
   
   const color = getColor();
   const size = getSize();
   const pulseRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   
   useFrame(({ clock }) => {
     if (pulseRef.current && (selected || hovered)) {
-      pulseRef.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 4) * 0.1);
+      pulseRef.current.scale.setScalar(1 + Math.sin(clock.getElapsedTime() * 4) * 0.2);
+    }
+    
+    if (glowRef.current) {
+      // Always have a subtle glow, but make it stronger when selected or hovered
+      const glowStrength = selected || hovered ? 0.5 : 0.3;
+      glowRef.current.material.opacity = glowStrength + Math.sin(clock.getElapsedTime() * 2) * 0.1;
     }
   });
 
@@ -78,31 +87,45 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
 
   return (
     <group position={[x, y, z]} onClick={onClick} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
-      {/* Main dot */}
-      <mesh>
-        <sphereGeometry args={[size, 16, 16]} />
-        <meshBasicMaterial color={color} />
+      {/* Glow effect around marker (always visible but stronger when selected/hovered) */}
+      <mesh ref={glowRef}>
+        <sphereGeometry args={[size * 2, 16, 16]} />
+        <meshBasicMaterial color={color} transparent opacity={0.3} />
       </mesh>
       
-      {/* Glow/pulse effect for selected or hovered marker */}
+      {/* Main dot with improved size */}
+      <mesh>
+        <sphereGeometry args={[size, 16, 16]} />
+        <meshStandardMaterial 
+          color={color} 
+          emissive={color} 
+          emissiveIntensity={0.5}
+          roughness={0.3} 
+          metalness={0.8}
+        />
+      </mesh>
+      
+      {/* Pulse effect for selected or hovered marker */}
       {(selected || hovered) && (
         <mesh ref={pulseRef}>
-          <sphereGeometry args={[size * 1.5, 16, 16]} />
-          <meshBasicMaterial color={color} transparent opacity={0.3} />
+          <sphereGeometry args={[size * 1.8, 16, 16]} />
+          <meshBasicMaterial color={color} transparent opacity={0.2} />
         </mesh>
       )}
 
-      {/* Tooltip on hover */}
+      {/* Tooltip on hover with improved text appearance */}
       {hovered && isFacingCamera() && (
         <Text
-          position={[0, size * 2, 0]}
-          fontSize={0.1}
+          position={[0, size * 2.5, 0]}
+          fontSize={0.12}
           color="white"
           anchorX="center"
           anchorY="bottom"
-          outlineWidth={0.01}
+          outlineWidth={0.02}
           outlineColor="#000000"
-          maxWidth={1}
+          maxWidth={1.5}
+          fillOpacity={1}
+          renderOrder={10}
         >
           {title}
         </Text>
@@ -133,7 +156,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'
   ]);
 
-  // Auto-rotation settings
+  // Auto-rotation is enabled by default
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(autoRotate);
   autoRotateRef.current = autoRotate;
@@ -253,10 +276,6 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         controlsRef.current.target.set(0, 0, 0);
         controlsRef.current.update();
       }
-    } else {
-      // No event selected anymore, resume rotation
-      prevSelectedEventRef.current = null;
-      setAutoRotate(true);
     }
   }, [selectedEvent, camera]);
 
