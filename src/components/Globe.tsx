@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
@@ -156,7 +157,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/textures/planets/earth_clouds_1024.png'
   ]);
 
-  // Default autoRotate to true - ensure it's initialized to true
+  // Default autoRotate to true
   const [autoRotate, setAutoRotate] = useState(true);
   const autoRotateRef = useRef(autoRotate);
   autoRotateRef.current = autoRotate;
@@ -173,19 +174,20 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
     }
   }, [autoRotate]);
 
-  // Manually rotate earth and clouds
+  // Rotate earth and clouds
   useFrame(({ clock }) => {
+    // Use a consistent rotation speed based on elapsed time
     if (earthRef.current && autoRotateRef.current) {
       const rotationSpeed = 0.05;
-      earthRef.current.rotation.y += rotationSpeed * 0.01;
+      earthRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed % (2 * Math.PI);
     }
     
     if (cloudsRef.current) {
-      cloudsRef.current.rotation.y += 0.07 * 0.01;
+      cloudsRef.current.rotation.y = clock.getElapsedTime() * 0.07 % (2 * Math.PI);
     }
 
     if (atmosphereRef.current) {
-      atmosphereRef.current.rotation.y += 0.03 * 0.01;
+      atmosphereRef.current.rotation.y = clock.getElapsedTime() * 0.03 % (2 * Math.PI);
     }
     
     // Sync the markers rotation with earth when auto-rotating
