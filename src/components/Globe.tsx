@@ -409,13 +409,10 @@ const Globe: React.FC<GlobeProps> = (props) => {
         
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
         
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[5, 3, 5]} intensity={2} />
-        <hemisphereLight 
-          intensity={0.3}
-          color="#ffffff"
-          groundColor="#000000"
-        />
+        <ambientLight intensity={2} />
+        <directionalLight position={[5, 3, 5]} intensity={2.5} />
+        <directionalLight position={[0, 3, 0]} intensity={2.5} />
+        
         {/* Add stars for a more immersive space background */}
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         
