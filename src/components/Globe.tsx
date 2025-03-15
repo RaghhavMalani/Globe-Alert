@@ -2,9 +2,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Text, Stars } from '@react-three/drei';
+import { ThreeEvent } from '@react-three/fiber';
 import * as THREE from 'three';
 import { NewsEvent } from '@/lib/types';
-import { AlertTriangle, CircleX, Flame, Zap, CloudLightning, Flag } from 'lucide-react';
+//import { AlertTriangle, CircleX, Flame, Zap, CloudLightning, Flag } from 'lucide-react';
 
 interface GlobeMarkerProps {
   lat: number;
@@ -87,7 +88,21 @@ const GlobeMarker: React.FC<GlobeMarkerProps> = ({
   };
 
   return (
-    <group position={[x, y, z]} onClick={onClick} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)}>
+    <group 
+    position={[x, y, z]} 
+    onClick={(e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      onClick();
+    }} 
+    onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      setHovered(true);
+    }}
+    onPointerOut={(e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      setHovered(false);
+    }}
+  >
       {/* Glow effect around marker (always visible but stronger when selected/hovered) */}
       <mesh ref={glowRef}>
         <sphereGeometry args={[size * 2, 16, 16]} />
@@ -148,6 +163,7 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   const markersGroupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const controlsRef = useRef<any>(null);
+  const isUserInteracting = useRef(false);
   
   // Load textures
   const [earthMap, earthBumpMap, earthSpecularMap, cloudsMap] = useLoader(THREE.TextureLoader, [
@@ -177,11 +193,17 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
   // Rotate earth and clouds
   useFrame(({ clock }) => {
     // Use a consistent rotation speed based on elapsed time
+    console.log('Frame running, autoRotate:', autoRotateRef.current);
+    console.log('Earth ref exists:', !!earthRef.current);
+  
     if (earthRef.current && autoRotateRef.current) {
-      const rotationSpeed = 0.05;
-      earthRef.current.rotation.y = clock.getElapsedTime() * rotationSpeed % (2 * Math.PI);
+      const rotationSpeed = 0.00001; // Reduced for smoother rotation
+      // Use incremental rotation instead of absolute position
+      earthRef.current.rotation.y += rotationSpeed;
+      
+      // Log only when actually rotating
+      console.log('Rotating earth, rotation:', earthRef.current.rotation.y);
     }
-    
     if (cloudsRef.current) {
       cloudsRef.current.rotation.y = clock.getElapsedTime() * 0.07 % (2 * Math.PI);
     }
@@ -195,6 +217,10 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
       markersGroupRef.current.rotation.y = earthRef.current.rotation.y;
     }
   });
+
+  useEffect(() => {
+  console.log('autoRotate changed to:', autoRotate);
+}, [autoRotate]);
 
   // Handle event selection and camera movement
   useEffect(() => {
@@ -350,14 +376,22 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         minDistance={2.5}
         maxDistance={7}
         autoRotate={autoRotate}
-        autoRotateSpeed={0.5}
         enableDamping={true}
         dampingFactor={0.05}
-        onChange={() => {
-          // Only stop auto-rotation if user is actively controlling and we're not zooming to location
-          if (!isZoomingToLocation && autoRotate) {
+        onStart={() => {
+          isUserInteracting.current = true;
+          if (!isZoomingToLocation) {
             setAutoRotate(false);
           }
+        }}
+        onEnd={() => {
+          isUserInteracting.current = false;
+          // Resume rotation after a brief delay
+          setTimeout(() => {
+            if (!isZoomingToLocation && !isUserInteracting.current) {
+              setAutoRotate(true);
+            }
+          }, 1000);
         }}
       />
     </>
@@ -375,9 +409,13 @@ const Globe: React.FC<GlobeProps> = (props) => {
         
         <PerspectiveCamera makeDefault position={[0, 0, 5]} fov={45} />
         
-        <ambientLight intensity={0.1} />
-        <directionalLight position={[5, 3, 5]} intensity={1.5} />
-        
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[5, 3, 5]} intensity={2} />
+        <hemisphereLight 
+          intensity={0.3}
+          color="#ffffff"
+          groundColor="#000000"
+        />
         {/* Add stars for a more immersive space background */}
         <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
         
