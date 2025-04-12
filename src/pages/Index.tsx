@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import Globe from '@/components/Globe';
 import NewsPanel from '@/components/NewsPanel';
 import FilterControl from '@/components/FilterControl';
 import TimelineControl from '@/components/TimelineControl';
 import { useNewsData } from '@/hooks/useNewsData';
-import { FilterOptions, EventType } from '@/lib/types';
+import { FilterOptions, EventType, NewsEvent } from '@/lib/types';
 import { Suspense } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sparkles, Globe as GlobeIcon, Info, HelpCircle } from 'lucide-react';
@@ -89,6 +90,9 @@ const Index = () => {
     { type: 'political', label: 'Political Crisis' },
     { type: 'other', label: 'Other Incidents' }
   ];
+  
+  // Ensure events is always an array
+  const safeEvents: NewsEvent[] = Array.isArray(events) ? events : [];
   
   return (
     <div className="min-h-screen w-full flex flex-col bg-background text-foreground overflow-hidden relative">
@@ -175,7 +179,7 @@ const Index = () => {
             </div>
           }>
             <Globe 
-              events={events} 
+              events={safeEvents} 
               selectedEvent={selectedEvent} 
               onSelectEvent={setSelectedEvent} 
             />
@@ -198,7 +202,7 @@ const Index = () => {
         {/* News panel */}
         <div className="w-full md:w-1/3 flex flex-col space-y-4 animate-fade-in" style={{animationDelay: '200ms'}}>
           <NewsPanel 
-            events={events}
+            events={safeEvents}
             loading={loading}
             selectedEvent={selectedEvent}
             onSelectEvent={setSelectedEvent}

@@ -3,13 +3,13 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { NewsEvent, FilterOptions } from '@/lib/types';
 import { fetchNewsEvents } from '@/lib/api';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export const useNewsData = (filters: FilterOptions) => {
   const [selectedEvent, setSelectedEvent] = useState<NewsEvent | null>(null);
   const { toast } = useToast();
   
-  // Use React Query for data fetching
+  // Use React Query for data fetching with updated error handling
   const { 
     data: events = [],
     isLoading: loading,
@@ -19,14 +19,26 @@ export const useNewsData = (filters: FilterOptions) => {
     queryFn: () => fetchNewsEvents(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
-    onError: (err) => {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch news data';
-      // Show error toast
-      toast({
-        title: "Error loading data",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    meta: {
+      errorHandler: (err: unknown) => {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch news data';
+        toast({
+          title: "Error loading data",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    },
+    onSettled: (data, error) => {
+      if (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch news data';
+        // Show error toast
+        toast({
+          title: "Error loading data",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     }
   });
   
