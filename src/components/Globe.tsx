@@ -192,24 +192,24 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
 
   // Rotate earth and clouds
   useFrame(({ clock }) => {
-    // Set a more visible rotation speed
-    const earthRotationSpeed = 0.001;
-    const cloudRotationSpeed = 0.0007;
-    const atmosphereRotationSpeed = 0.0003;
-    
+    // Use a consistent rotation speed based on elapsed time
+    console.log('Frame running, autoRotate:', autoRotateRef.current);
+    console.log('Earth ref exists:', !!earthRef.current);
+  
     if (earthRef.current && autoRotateRef.current) {
-      // Apply rotation directly
-      earthRef.current.rotation.y += earthRotationSpeed;
+      const rotationSpeed = 0.00001; // Reduced for smoother rotation
+      // Use incremental rotation instead of absolute position
+      earthRef.current.rotation.y += rotationSpeed;
+      
+      // Log only when actually rotating
+      console.log('Rotating earth, rotation:', earthRef.current.rotation.y);
     }
-    
     if (cloudsRef.current) {
-      // Apply cloud rotation at a slightly faster speed than Earth
-      cloudsRef.current.rotation.y += cloudRotationSpeed;
+      cloudsRef.current.rotation.y = clock.getElapsedTime() * 0.07 % (2 * Math.PI);
     }
 
     if (atmosphereRef.current) {
-      // Apply atmosphere rotation at a slower speed for subtle effect
-      atmosphereRef.current.rotation.y += atmosphereRotationSpeed;
+      atmosphereRef.current.rotation.y = clock.getElapsedTime() * 0.03 % (2 * Math.PI);
     }
     
     // Sync the markers rotation with earth when auto-rotating
@@ -376,7 +376,6 @@ const Earth: React.FC<GlobeProps> = ({ events, selectedEvent, onSelectEvent }) =
         minDistance={2.5}
         maxDistance={7}
         autoRotate={autoRotate}
-        autoRotateSpeed={0.5}
         enableDamping={true}
         dampingFactor={0.05}
         onStart={() => {
