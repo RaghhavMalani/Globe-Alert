@@ -19,26 +19,16 @@ export const useNewsData = (filters: FilterOptions) => {
     queryFn: () => fetchNewsEvents(filters),
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
-    meta: {
-      errorHandler: (err: unknown) => {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch news data';
-        toast({
-          title: "Error loading data",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+    onSuccess: () => {
+      // Optional success handling
     },
-    onSettled: (data, error) => {
-      if (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch news data';
-        // Show error toast
-        toast({
-          title: "Error loading data",
-          description: errorMessage,
-          variant: "destructive",
-        });
-      }
+    onError: (err: Error) => {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch news data';
+      toast({
+        title: "Error loading data",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   });
   
