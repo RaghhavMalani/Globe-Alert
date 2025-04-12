@@ -1,35 +1,138 @@
-import { NewsEvent, FilterOptions } from './types';
 
-const API_BASE_URL = 'https://api.example.com'; // Replace with your actual API endpoint
+import { NewsEvent, FilterOptions } from './types';
+import { config } from './config';
 
 /**
  * Fetches news events from the API based on the provided filters
  */
 export async function fetchNewsEvents(filters: FilterOptions): Promise<NewsEvent[]> {
   try {
-    // For now, we'll continue using mock data while the actual API is set up
-    // In a real application, we would make the API call here
-    // const response = await fetch(`${API_BASE_URL}/events?${new URLSearchParams({
-    //   types: filters.types.join(','),
-    //   timeRange: filters.timeRange,
-    //   severity: filters.severity.join(','),
-    // })}`);
-    // 
-    // if (!response.ok) {
-    //   throw new Error(`API error: ${response.status}`);
-    // }
-    // 
-    // return await response.json();
-
-    // Using mock data for now
-    return generateMockEvents();
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    
+    if (filters.types.length > 0) {
+      queryParams.set('types', filters.types.join(','));
+    }
+    
+    if (filters.timeRange) {
+      queryParams.set('timeRange', filters.timeRange);
+    }
+    
+    if (filters.severity.length > 0) {
+      queryParams.set('severity', filters.severity.join(','));
+    }
+    
+    // Make API request
+    const url = `${config.api.baseUrl}${config.api.newsEndpoint}?${queryParams.toString()}`;
+    console.log('Fetching from URL:', url);
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data;
   } catch (error) {
     console.error('Error fetching news events:', error);
+    
+    // Return mock data in case of error (for development)
+    if (import.meta.env.DEV) {
+      console.log('Using mock data due to API error');
+      return generateMockEvents();
+    }
+    
     throw error;
   }
 }
 
-// Mock data for development - this will be replaced by API data later
+/**
+ * Fetches a single news event by ID
+ */
+export async function fetchNewsEventById(id: string): Promise<NewsEvent | null> {
+  try {
+    const response = await fetch(`${config.api.baseUrl}${config.api.newsEndpoint}/${id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error fetching news event with ID ${id}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Creates a new news event
+ */
+export async function createNewsEvent(eventData: Omit<NewsEvent, 'id'>): Promise<NewsEvent> {
+  try {
+    const response = await fetch(`${config.api.baseUrl}${config.api.newsEndpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating news event:', error);
+    throw error;
+  }
+}
+
+/**
+ * Updates an existing news event
+ */
+export async function updateNewsEvent(id: string, eventData: Partial<NewsEvent>): Promise<void> {
+  try {
+    const response = await fetch(`${config.api.baseUrl}${config.api.newsEndpoint}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(eventData),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Error updating news event with ID ${id}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Deletes a news event
+ */
+export async function deleteNewsEvent(id: string): Promise<void> {
+  try {
+    const response = await fetch(`${config.api.baseUrl}${config.api.newsEndpoint}/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error(`Error deleting news event with ID ${id}:`, error);
+    throw error;
+  }
+}
+
+// Mock data for development - this will be used only if API fails
 function generateMockEvents(): NewsEvent[] {
   const events: NewsEvent[] = [
     {
