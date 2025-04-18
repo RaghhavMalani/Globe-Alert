@@ -3,8 +3,6 @@
 
 GlobalAlert is an interactive 3D visualization platform that tracks and displays global incidents, conflicts, and events in real-time. Built with modern web technologies, it offers an immersive way to stay informed about worldwide events.
 
-![GlobalAlert Preview](public/og-image.png)
-
 ## ✨ Features
 
 - **Interactive 3D Globe**
@@ -126,9 +124,6 @@ VITE_APP_DESCRIPTION=Real-time global incident tracking
 4. Push to the branch
 5. Open a Pull Request
 
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
@@ -137,12 +132,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - shadcn/ui for beautiful UI components
 - Tailwind CSS team for styling utilities
 
-## 🔗 Links
-
-- [Documentation](https://docs.lovable.dev)
-- [Project URL](https://lovable.dev/projects/b89e3fb2-b6bf-4db6-9236-c37664c4c6a3)
-- [Issues](https://github.com/yourusername/globalalert/issues)
-
----
-
-Built with ❤️ using [Lovable](https://lovable.dev)
