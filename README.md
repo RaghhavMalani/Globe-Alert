@@ -1,69 +1,148 @@
-# Welcome to your Lovable project
 
-## Project info
+# 🌍 GlobalAlert - Real-time Global Incident Tracking
 
-**URL**: https://lovable.dev/projects/b89e3fb2-b6bf-4db6-9236-c37664c4c6a3
+GlobalAlert is an interactive 3D visualization platform that tracks and displays global incidents, conflicts, and events in real-time. Built with modern web technologies, it offers an immersive way to stay informed about worldwide events.
 
-## How can I edit this code?
+![GlobalAlert Preview](public/og-image.png)
 
-There are several ways of editing your application.
+## ✨ Features
 
-**Use Lovable**
+- **Interactive 3D Globe**
+  - Realistic Earth visualization with cloud layers and atmosphere effects
+  - Smooth camera controls (rotation, zoom, pan)
+  - Dynamic event markers with visual feedback
+  - Auto-rotation with user interaction pause
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/b89e3fb2-b6bf-4db6-9236-c37664c4c6a3) and start prompting.
+- **Real-time Event Tracking**
+  - Live updates of global incidents
+  - Color-coded event categories
+  - Severity-based visualization
+  - Location-based plotting on the globe
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Timeline Explorer**
+  - Interactive timeline navigation
+  - Playback controls (play, pause, fast forward)
+  - Time-based event filtering
+  - Historical event exploration
 
-**Use your preferred IDE**
+- **Event Categories**
+  - War/Conflicts
+  - Terrorism
+  - Natural Disasters
+  - Civil Unrest
+  - Political Crises
+  - Other Incidents
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Detailed Information**
+  - Event descriptions and details
+  - Location data
+  - Severity levels
+  - Timestamp tracking
+  - Source attribution
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Technology Stack
 
-Follow these steps:
+- **Frontend Framework**: React with TypeScript
+- **3D Visualization**: Three.js with React Three Fiber
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite
+- **State Management**: TanStack Query
+- **Date Handling**: date-fns
+- **Icons**: Lucide React
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🛠️ Development Setup
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **Clone the Repository**
+   ```bash
+   git clone <repository-url>
+   cd globalalert
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+3. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Build for Production**
+   ```bash
+   npm run build
+   ```
+
+## 🎮 Usage Guide
+
+- **Globe Navigation**
+  - Click and drag to rotate the globe
+  - Scroll to zoom in/out
+  - Click on markers to view event details
+  - Double-click markers to reset view
+
+- **Timeline Controls**
+  - Use the play/pause button to animate events
+  - Drag the timeline slider for manual navigation
+  - Fast forward/rewind buttons for quick navigation
+  - Reset button to return to current time
+
+- **Event Filtering**
+  - Filter by event type
+  - Filter by severity level
+  - Filter by time range
+  - Combine multiple filters
+
+## 🎨 Design Features
+
+- **Neo-glass Morphism**: Modern, translucent UI elements
+- **Responsive Layout**: Adapts to all screen sizes
+- **Dark Mode Optimized**: Designed for optimal viewing
+- **Animated Elements**: Smooth transitions and effects
+- **Interactive Feedback**: Visual responses to user actions
+
+## 🔧 Configuration
+
+The application can be configured through environment variables:
+
+```env
+VITE_APP_TITLE=GlobalAlert
+VITE_APP_DESCRIPTION=Real-time global incident tracking
 ```
 
-**Edit a file directly in GitHub**
+## 📱 Browser Support
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
 
-**Use GitHub Codespaces**
+## 🤝 Contributing
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
 
-## What technologies are used for this project?
+## 📄 License
 
-This project is built with .
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🙏 Acknowledgments
 
-## How can I deploy this project?
+- Three.js community for 3D visualization resources
+- React Three Fiber team for React integration
+- shadcn/ui for beautiful UI components
+- Tailwind CSS team for styling utilities
 
-Simply open [Lovable](https://lovable.dev/projects/b89e3fb2-b6bf-4db6-9236-c37664c4c6a3) and click on Share -> Publish.
+## 🔗 Links
 
-## I want to use a custom domain - is that possible?
+- [Documentation](https://docs.lovable.dev)
+- [Project URL](https://lovable.dev/projects/b89e3fb2-b6bf-4db6-9236-c37664c4c6a3)
+- [Issues](https://github.com/yourusername/globalalert/issues)
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+---
+
+Built with ❤️ using [Lovable](https://lovable.dev)
